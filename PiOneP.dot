@@ -1,0 +1,44 @@
+digraph PiOneP {
+        compound=true;
+        rankdir=LR;
+        node [shape="record"];
+        node [style="rounded"];
+        edge [arrowhead="none"];
+
+        in [shape="point"; style="invis"];
+
+        subgraph clusterFork {
+                label="Fork";
+
+                ForkIn1 [shape="point"];
+                ForkOut1 [shape="point"; style="invis"];
+                ForkOut2 [shape="point"; style="invis"];
+                { rank="same"; ForkOut1; ForkOut2 }
+
+                View;
+                Identity [label="Id"];
+                { rank="same"; View; Identity; }
+
+                ForkIn1:e -> View:w;
+                ForkIn1:e -> Identity:w;
+        }
+
+        subgraph clusterFirst {
+                label="First";
+
+                f [style="filled"];
+                Identity2 [label="Id"]
+        }
+
+        Update [label="{{<i1>|<i2>}|Update}"];
+
+        out [shape="point"; style="invis"];
+
+        in:e -> ForkIn1:w [label="(x, y)"];
+        View:e -> f:w [label="x"];
+        Identity:e -> Identity2:w [label="(x, y)"];
+        f:e -> Update:i1:w [label="x'"];
+        Identity2:e -> Update:i2:w [label="(x, y)"];
+
+        Update:e -> out:w [label="(x', y)"];
+}
