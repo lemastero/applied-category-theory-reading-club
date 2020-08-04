@@ -1,0 +1,43 @@
+digraph PrismP {
+        compound=true;
+        rankdir=LR;
+        node [shape="record"];
+        node [style="rounded"];
+        edge [arrowhead="none"];
+
+        in [shape="point"; style="invis"];
+
+        Match [label="{Match|{<o1>|<o2>}}"];
+
+        subgraph clusterRight {
+                label="Right";
+
+                Identity2 [label="Id"]
+                f [style="filled"];
+        }
+
+        subgraph clusterEither {
+                label="Either";
+
+                EitherOut1 [shape="point"];
+
+                Build;
+                Identity [label="Id"];
+                { rank="same"; Build; Identity; }
+
+                Identity:e -> EitherOut1 [label="t"];
+                Build:e -> EitherOut1 [label="t"];
+        }
+
+        out [shape="point"; style="invis"];
+
+        in:e -> Match:w [label="s"];
+
+        Match:o1:e -> Identity2:w [label="t"];
+        Match:o2:e -> f:w [label="a"];
+
+        Identity2:e -> Identity:w [label="t"];
+        f:e -> Build:w [label="b"];
+
+        EitherOut1:e -> out [label="t"];
+}
