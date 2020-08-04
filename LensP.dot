@@ -11,9 +11,6 @@ digraph LensP {
                 label="Fork";
 
                 ForkIn1 [shape="point"];
-                ForkOut1 [shape="point"; style="invis"];
-                ForkOut2 [shape="point"; style="invis"];
-                { rank="same"; ForkOut1; ForkOut2 }
 
                 View;
                 Identity [label="Id"];
