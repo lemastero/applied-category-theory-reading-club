@@ -16,8 +16,8 @@ digraph LensP {
                 Identity [label="Id"];
                 { rank="same"; View; Identity; }
 
-                ForkIn1:e -> View:w;
-                ForkIn1:e -> Identity:w;
+                ForkIn1:e -> View:w [label="s"];
+                ForkIn1:e -> Identity:w [label="s"];
         }
 
         subgraph clusterFirst {
