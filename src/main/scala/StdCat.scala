@@ -48,6 +48,15 @@ object StdCat:
   trait BiCartesian[|=>[_, _]] extends Cartesian[|=>] with CoCartesian[|=>]
 
   /**********************
+   * Identity Functor
+   **********************/
+
+  type Id = [A] =>> A
+
+  given as Functor[Id]:
+    override def fmap[A, B](f: A => B)(a: A): B = f(a)
+
+  /**********************
    * Instances for A => B
    **********************/
   object ProFunctor:
@@ -70,3 +79,25 @@ object StdCat:
           case +>(a: A) => p(a).inr
 
 end StdCat
+
+object Existentials:
+  /* Inspired from the work for scala 2 in
+   * https://github.com/djspiewak/skolems
+   */
+
+  /* An existential for a type X
+   * with dependent type encoding
+   */
+  trait Exists[F[_]]:
+    type X
+    val f: F[X]
+
+  /* instance of an existential as a polymorphic given */
+  given [F[_], A](using F[A]) as Exists[F]:
+    type X = A
+    val f = summon[F[A]]
+
+  object Exists:
+    def apply[F[_], A](f: F[A]): Exists[F] =
+      given F[A] = f
+      summon[Exists[F]]

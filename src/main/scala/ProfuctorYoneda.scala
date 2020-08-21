@@ -1,6 +1,7 @@
-object ProYoneda:
+import StdCat._
+import Existentials._
 
-  import StdCat._
+object ProYoneda:
 
   /**********************
    * Lenses
@@ -153,14 +154,100 @@ object ProYoneda:
 
 end ProYoneda
 
+object Yoneda:
+
+  /**********************
+   * Lemma
+   **********************/
+  case class Yo[F[_], A](unYo: [R] => (A => R) => F[R])
+
+  //fromYo: [F[_], A] => Yo[F, A] => F[A]
+  val fromYo =
+    [F[_], A] => (y: Yo[F, A]) => y.unYo(identity)
+
+  // toYo: [F[_], A] => Functor[F] ?=> F[A] => Yo[F, A]
+  val toYo =
+    [F[_], A] => (using F: Functor[F]) =>
+        (x: F[A]) => Yo[F, A]([R] => (h: A => R) => F.fmap(h)(x))
+
+  /**********************
+   * Lemma [Dual] BROKEN!
+   **********************/
+  /* Implementation restriction: polymorphic function types must have a value parameter */
+  case class CoYoP[F[_], R](unCoYo: [C] => () => (F[C], C => R))
+
+  /* fromCoYoP: [F[_], B] => Functor[F] ?=> CoYo[F, B] => F[B] */
+  val fromCoYoP =
+    [F[_], B] => (using F: Functor[F]) =>
+      (cy: CoYoP[F, B]) =>
+        val (x, h) = cy.unCoYo()
+        F.fmap(h)(x)
+
+   /*
+   * Universal encoding like this won't work to represent
+   * the F => CoYo direction, since we need to provide a
+   * pair (F[A], A => R) for any A
+   *
+   * Instead we want an existential, which means that the
+   * implementation decides the A and not the caller
+   * Only in this way we can fix the A
+   * to the passed-in B in the toCoYo direction
+   */
+  // val toCoYoP: [F[_], B] => F[B] => CoYoP[F, B] =
+  //   [F[_], B] => (y: F[B]) => CoYoP([C] => () => what here ???)
+
+
+  /****************************
+   * Lemma [Dual with Exists]
+   ****************************/
+  case class CoYo[F[_], R](unCoYo: Exists[[C] =>> (F[C], C => R)])
+
+  /* fromCoYo: [F[_], B] => Functor[F] ?=> CoYo[F, B] => F[B] */
+  val fromCoYo =
+    [F[_], B] => (using F: Functor[F]) =>
+      (cy: CoYo[F, B]) =>
+        val (f, h) = cy.unCoYo.f
+        F.fmap(h)(f)
+
+  /* toCoYo: [F[_], B] => F[B] => CoYo[F, B] */
+  val toCoYo =
+    [F[_], B] => (y: F[B]) =>
+      CoYo[F, B](Exists(y -> identity[B]))
+
+  object CoYo:
+    /* coyo functor instance */
+    given [F[_]] as Functor[[R] =>> CoYo[F, R]] = new Functor:
+      override def fmap[A, B](g: A => B)(y: CoYo[F, A]) =
+        val (x, h) = y.unCoYo.f
+        CoYo[F, B](Exists(x -> (g compose h)))
+
+  /****************************
+   * Double Yoneda Embedding
+   ****************************/
+
+  /* A => B <=> for any functor. F[A] => F[B] */
+
+  def fromFun[A, B](f: A => B): [F[_]] => Functor[F] ?=> F[A] => F[B] =
+    [F[_]] => (using F: Functor[F]) => F.fmap(f)
+
+  def toFun[A, B](h: [F[_]] => Functor[F] ?=> F[A] => F[B]): (A => B) =
+    h[Id]
+
+
 trait UniversalPropOfExistential[B, F[_]]:
 
   def f_universal: [A] => F[A] => B
 
   /* unreducible application of higher-kinded type F to wildcard arguments */
   // def f_existential: F[?] => B
+  def f_existential: Exists[[X] =>> F[X] => B]
 
 object Unilist extends UniversalPropOfExistential[Int, List]:
 
   override val f_universal: [A] => List[A] => Int =
     [A] => (l: List[A]) => l.size
+
+  override val f_existential = new Exists:
+    type X = Any
+    val f = _.size
+
