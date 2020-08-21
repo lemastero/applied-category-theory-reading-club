@@ -152,6 +152,18 @@ object ProYoneda:
           case +>(x)  => Some(x)
         dimap(fromOpt)(toOpt)(right(h))
 
+  /**********************************
+   * Symmetric form of Lens category
+   **********************************/
+
+  case class LensArrow[A, B, S, T](lens: Exists[[C] =>> (S => (C, A), ((C, B)) => T)])
+
+  /**********************************
+   * Symmetric form of Prism category
+   **********************************/
+
+  case class PrismArrow[A, B, S, T](prism: Exists[[C] =>> (S => (C <+> A), (C <+> B) => T)])
+
 end ProYoneda
 
 object Yoneda:
