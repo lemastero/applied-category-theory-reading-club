@@ -1,8 +1,9 @@
 object StdCat:
 
-  /* Sum type custom version
-   *
-   * we need our tagged type for sums, because
+  /**********************
+   * Custom Sum type
+   **********************/
+  /* We need our tagged type for sums, because
    * scala3 union types are actually untagged
    * and the original type can't be pattern matched
    * on. I.e. once you have a x: A|B we're not able
@@ -16,9 +17,24 @@ object StdCat:
     case <+(inl) => +>(inl)
     case +>(inr) => <+(inr)
 
-  extension [A, B](a: A):
-    def inl  = <+>.<+[A, B](a)
-    def inr = <+>.+>[B, A](a)
+    def merge[C >: B](using ev: A <:< C): C = this match
+    case <+(inl) => ev(inl)
+    case +>(inr) => inr
+
+  object <+> :
+    /* right-biased functor for tagged-sum */
+    given [C] as Functor[[A] =>> C <+> A]:
+      import <+>._
+      override def fmap[A, B](f: A => B)(fa: <+>[C, A]): <+>[C, B] =
+        fa match
+        case <+(c) => <+(c)
+        case +>(a) => +>(f(a))
+
+    /* provides injectors to build sums from a given value */
+    extension [A, B](a: A):
+      def inl = <+>.<+[A, B](a)
+      def inr = <+>.+>[B, A](a)
+
 
   /**********************
    * Definitions
@@ -45,7 +61,23 @@ object StdCat:
   /* Seems like we can't do without a Nominal Type
    * a type alias wouldn't work
    */
-  trait BiCartesian[|=>[_, _]] extends Cartesian[|=>] with CoCartesian[|=>]
+  trait AffineTraversing[|=>[_, _]] extends Cartesian[|=>] with CoCartesian[|=>] with ProFunctor[|=>]:
+    def rightsecond[A, B, C, D](p: A |=> B): (C <+> (D, A)) |=> (C <+> (D, B))
+
+    override def right[A, B, C](p: A |=> B): (C <+> A) |=> (C <+> B) =
+      val fun = summon[Functor[[A] =>> C <+> A]]
+      type Prod[T] = C <+> (Unit, T)
+      type Sum[T] = C <+> T
+      dimap[Prod[A], Prod[B], Sum[A], Sum[B]](fun.fmap(() -> _))(fun.fmap(_._2))(rightsecond(p))
+
+    override def second[A, B, C](p: A |=> B): ((C, A)) |=> (C, B) =
+      import <+>._
+      val fun = summon[Functor[[A] =>> C <+> A]]
+      type Sum[T] = (C, B) <+> (C, T)
+      type Prod[T] = (C, T)
+      dimap[Sum[A], Sum[B], Prod[A], Prod[B]](_.inr)(_.merge)(rightsecond(p))
+
+
 
   /**********************
    * Identity Functor
@@ -64,13 +96,18 @@ object StdCat:
      * final join type, it seems, so we go for a nominal type, using
      * a custom trait
      */
-    given BiCartesian[Function] =
-      new BiCartesian:
+    given AffineTraversing[Function] =
+      new AffineTraversing:
         import <+>._
+
+        override def rightsecond[A, B, C, D](p: A => B): C <+> (D, A) => C <+> (D, B) =
+          case <+(c: C) => c.inl
+          case +>((d: D, a: A)) => (d, p(a)).inr
 
         override def dimap[A, B, C, D](l: C => A)(r: B => D)(p: A => B): C => D =
           r compose p compose l
 
+        /* we override these for optimization */
         override def second[A, B, C](p: A => B): ((C, A)) => (C, B) =
           {case ((c, a)) => (c, p(a))}
 
