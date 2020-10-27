@@ -350,14 +350,29 @@ class (Functor f, Representable u) => Adjunction f u | f -> u, u -> f where
 [Scalaz](https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/Adjunction.scala)
 
 ```scala
-abstract class Adjunction[F[_], G[_]](implicit val F: Functor[F], val G: Functor[G]) {
-  def unit[A](a: => A): G[F[A]] = leftAdjunct(a)(x => x)
+trait Adjunction[F[_], G[_]] {
+  def left[X, Y](f: F[X] => Y): X => G[Y]
+  def right[X, Y](f: X => G[Y]): F[X] => Y
 
-  def counit[A](a: F[G[A]]): A = rightAdjunct(a)(x => x)
+  def unit[A]: A => G[F[A]] = left(identity)
+  def counit[B]: F[G[B]] => B = right(identity)
+}
 
-  def leftAdjunct[A, B](a: => A)(f: F[A] => B): G[B] = G.map(unit(a))(f)
+trait AdjunctionLaws[F[_], G[_]] extends Adjunction[F, G] {
+  val FF: Functor[F]
+  val FG: Functor[G]
 
-  def rightAdjunct[A, B](a: F[A])(f: A => G[B]): B = counit(F.map(a)(f))
+  def triangleIdentityF[A](fa: F[A]): Boolean = {
+    val rhs1: F[G[F[A]]] = FF.map(fa)(unit)
+    val rhs2: F[A] = counit(rhs1)
+    fa == rhs2
+  }
+
+  def triangleIdentityG[A](fa: G[A]): Boolean = {
+    val rhs1: G[F[G[A]]] = unit(fa)
+    val rhs2: G[A] = FG.map(rhs1)(counit)
+    fa == rhs2
+  }
 }
 ```
 
