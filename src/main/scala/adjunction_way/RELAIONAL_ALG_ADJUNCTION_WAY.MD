@@ -92,10 +92,10 @@ Scala
 ```Scala
 trait Key[K]
 trait Bag[V]
-trait RelationalAlgebra {
-  def indexBy[K: Key, V]:   Bag[V] => (V => K) => (K => Bag[V])
-  def merge[K: Key, V, V1]: (K => V, K => V1) => (K => (V,V1))
-  def cod[K: Key,V]:        K => Bag[V] => Bag[V] 
+abstract class RelationalAlgebra[V] {
+  def indexBy[K: Key]:   Bag[V] => (V => K) => (K => Bag[V])
+  def merge[K: Key, V1]: (K => V, K => V1) => (K => (V,V1))
+  def cod[K: Key]:       K => Bag[V] => Bag[V]
 }
 ```
 It has linear time result: `Bag (Bag Name x Bag Amount)` and quadratic if we flatten to `Bag (Name x Amount)`.  
