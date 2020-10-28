@@ -315,22 +315,11 @@ Functors L: D -> C and R C -> D form an `adjunction` `L -|` if the arrows L A ->
 
 C(L A, B) ~ D(A, R B)
 
-![](../../../../adjunction2.svg)
+![](./adjunction_general.svg)
 
 This is natural in the sense that there are natural transformations ...
 
-Example of adjunction
-Category Set^2 (`product category`)  
-objects: paris `(A,B)` of Set-objects `A` and `B`  
-arrows: pairs `(f,g) : (A.B) -> (C,D)` of Set-arrows `f: A -> C` and `g : B -> D`  
-
-Diagonal functor `Δ: Set -> Set^2` take object `A` and arrow `f` in Set to `(A,A)` and `(f,f)` in `Set^2`  
-Adjunction `Δ -| x` between  Set^2 and Set captures the equivalence between arrows `ΔA -> (B,C)` ins `Set^2`  
-that is pairs of functions with a common domain and  
-arrows `A -> B x C` in Set
-
-
-![](../../../../diagonal_product.svg)
+### Adjunction in FP
 
 [Haskell](https://hackage.haskell.org/package/adjunctions-4.4/docs/Data-Functor-Adjunction.html)
 
@@ -376,6 +365,34 @@ trait AdjunctionLaws[F[_], G[_]] extends Adjunction[F, G] {
 }
 ```
 
+### Example of adjunction Δ -| x
+
+Category Set^2 (`product category`)  
+objects: paris `(A,B)` of Set-objects `A` and `B`  
+arrows: pairs `(f,g) : (A.B) -> (C,D)` of Set-arrows `f: A -> C` and `g : B -> D`  
+
+Diagonal functor `Δ: Set -> Set^2` take object `A` and arrow `f` in Set to `(A,A)` and `(f,f)` in `Set^2`  
+Adjunction `Δ -| x` between  Set^2 and Set captures the equivalence between arrows `ΔA -> (B,C)` ins `Set^2`  
+that is pairs of functions with a common domain and  
+arrows `A -> B x C` in Set
+
+![](./adjunction_diagonal.svg)
+
+### Example adjunction product and tuple
+
+```scala
+def tupleFunctionFromAdjunction[R]: Adjunction2[Tuple2[*, R], Function1[R, *]] =
+  new Adjunction2[(*, R), R => *] {
+    def left[A, B](f: ((A, R)) => B): A => R => B =
+      Function.untupled(f).curried
+
+    def right[A, B](f: A => R => B): ((A, R)) => B =
+      Function.uncurried(f).tupled
+  }
+```
+
+![](./adjunction_product_tuple.svg)
+
 ### Important adjunctions example Bags
 
 * Bags are free commutative monoids
@@ -383,7 +400,7 @@ trait AdjunctionLaws[F[_], G[_]] extends Adjunction[F, G] {
 * adjunction: `Free -| U` (forgetful functor) between CMon and Set, that embed set `A`: `Free A = (Bag A, 0, +)`  
 and the retraction (forgetful functor) `U: (M, e, +) -> M` of commutative monoid into its carrier
 
-![](../../../../adjunction_cmon.svg)
+![](./adjunction_cmon_set.svg)
 
 ### 2.5 Monads
 
