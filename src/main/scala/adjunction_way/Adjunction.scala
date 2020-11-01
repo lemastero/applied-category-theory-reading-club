@@ -22,20 +22,9 @@ trait Adjunction1Laws[F[_], G[_]] extends Adjunction1[F, G] {
   }
 }
 
-trait Adjunction2[F[_], G[_]] extends Adjunction1[F,G]{
+trait Adjunction2[F[_], G[_]]{
   def left[X, Y](f: F[X] => Y): X => G[Y]
   def right[X, Y](f: X => G[Y]): F[X] => Y
-
-  override def unit[A]: A => G[F[A]] = left(identity)
-  override def counit[B]: F[G[B]] => B = right(identity)
-}
-
-trait Adjunction2From1[F[_], G[_]] extends Adjunction1[F,G]{
-  val FF: Functor[F]
-  val FG: Functor[G]
-
-  def left[X, Y](f: F[X] => Y): X => G[Y] = a => FG.map(unit(a))(f)
-  def right[X, Y](f: X => G[Y]): F[X] => Y = a => counit(FF.map(a)(f))
 }
 
 trait Adjunction2Laws[F[_], G[_]] extends Adjunction2[F,G] {
@@ -75,6 +64,21 @@ trait Adjunction2Laws[F[_], G[_]] extends Adjunction2[F,G] {
     val rhs2: X => G[Y] = left(rhs1)
     fn == rhs2
   }
+}
+
+// Adjunction definition 1 can be expressed using definition 2
+trait Adjunction1From2[F[_], G[_]] extends Adjunction2[F,G]{
+  def unit[A]: A => G[F[A]] = left(identity[F[A]])
+  def counit[B]: F[G[B]] => B = right(identity[G[B]])
+}
+
+// Adjunction def 2 can be expressed using def 1
+trait Adjunction2From1[F[_], G[_]] extends Adjunction1[F,G]{
+  val FF: Functor[F]
+  val FG: Functor[G]
+
+  def left[X, Y](f: F[X] => Y): X => G[Y] = a => FG.map(unit(a))(f)
+  def right[X, Y](f: X => G[Y]): F[X] => Y = a => counit(FF.map(a)(f))
 }
 
 object AdjunctionExamples {
